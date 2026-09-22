@@ -11,7 +11,7 @@ from Analysis.paper_config import COMPONENT_COLORS
 from Analysis.paper_figures import _save_figure
 
 
-def node_feature_sweep(bundle, output_dir, fourier_orders=(0, 1, 2, 3),
+def node_feature_sweep(bundle, output_dir, fourier_orders=(0, 1, 2),
                        polynomial_degrees=(1, 2, 3, 4), max_epochs=None):
     """Vary Fourier at polynomial degree 1, and polynomial at Fourier order 0.
 

@@ -962,14 +962,20 @@ def _plot_density_figure(
     arm_colors = ARM_COLORS
     generated = []
 
-    # Each descriptive endpoint uses only participants covering that time.
+    # Each participant's endpoints are its OWN first and last fitted states in
+    # the window.  The extreme columns of the union grid are reached by only a
+    # handful of participants, which would make the barycenter rest on n~5.
     endpoint_subject_weights = {}
     endpoint_subject_counts = {}
     for label in (0, 1):
         arm = trajectories[labels == label]
-        for when, column in (("initial", 0), ("final", -1)):
-            values = arm[:, column, :]
-            covered = np.isfinite(values).all(axis=1)
+        finite_rows = np.isfinite(arm).all(axis=2)
+        has_any = finite_rows.any(axis=1)
+        first = np.argmax(finite_rows, axis=1)
+        last = arm.shape[1] - 1 - np.argmax(finite_rows[:, ::-1], axis=1)
+        for when, column in (("initial", first), ("final", last)):
+            values = arm[np.arange(arm.shape[0]), column, :]
+            covered = has_any & np.isfinite(values).all(axis=1)
             endpoint_subject_weights[(label, when)] = values[covered]
             endpoint_subject_counts[(label, when)] = (
                 int(covered.sum()), int(values.shape[0])
@@ -981,7 +987,7 @@ def _plot_density_figure(
                     "or use common_grid_mode='intersection'."
                 )
     print(
-        "[density endpoints] participants covering each endpoint: "
+        "[density endpoints] participants with own initial/final state: "
         + ", ".join(
             f"{ARM_NAMES[label]}/{when} {endpoint_subject_counts[(label, when)][0]}"
             f"/{endpoint_subject_counts[(label, when)][1]}"
@@ -1447,6 +1453,9 @@ def generate_paper_figures(
         raise RuntimeError("Selected run has the wrong dimension")
     report = verify_interval_data(data)
     files = _plot_trajectory_figures(data, output_folder, band_pct=band_pct)
+    files += _plot_density_figure(
+        data, output_folder, expected_dimension=actual_dimension,
+    )
     files += _plot_window_sensitivity(data, output_folder)
     coverage_csv = Path(output_folder) / "group_curve_coverage.csv"
     coverage_table(data).to_csv(coverage_csv, index=False)
