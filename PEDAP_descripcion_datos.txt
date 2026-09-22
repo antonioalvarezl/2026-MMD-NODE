@@ -1,0 +1,79 @@
+PEDAP: datos originales y benchmark procesado
+
+PEDAP_benchmark.zip contiene una única carpeta pedap_benchmark/.
+Para usarla con el código, extráela en data/processed/. Incluye:
+
+- raw/: los tres ficheros originales utilizados: PtRoster.txt
+  (participantes y asignación aleatoria), PEDAPVisitInfo.txt (visitas)
+  y PEDAPDexcomClarityCGM.txt (CGM Dexcom Clarity).
+
+- rct_followup/: seguimiento de los 102 participantes aleatorizados,
+  desde la aleatorización + 4 días hasta la visita real de semana 13
+  (o última visita válida si abandonó). Contiene lecturas CGM en Parquet,
+  participantes y control de calidad semanal en CSV. Se usan semanas
+  con al menos 72 horas de CGM, sin rellenar semanas faltantes y
+  conservando los tiempos reales de observación.
+
+- pre_randomization_baseline/: CGM de los 14 días anteriores a la
+  aleatorización, con al menos 168 horas para disponer de un basal válido.
+  Contiene lecturas en Parquet y control de calidad en CSV. Se usa para
+  calcular cambios respecto al basal, no para el fitting longitudinal.
+
+- weekly_distributions/: las distribuciones ya agregadas que el modelo
+  consume realmente, en formato largo (una fila por observación). Las dos
+  carpetas anteriores son el registro auditable, lecturas sueltas de sensor;
+  aquí están esas mismas lecturas ya repartidas en los bloques semanales, en
+  los tiempos de observación reales:
+
+    pedap_weekly_univariate.parquet    d=1, bloques semanales (glucosa)
+    pedap_weekly_bivariate.parquet     d=2, bloques semanales (glucosa, dG/dt)
+    pedap_baseline_univariate.parquet  d=1, bloque basal único
+    pedap_baseline_bivariate.parquet   d=2, bloque basal único
+    manifest.json                      procedencia, reglas y huellas SHA-256
+
+  Cuatro tablas y nada más. La estructura de bloques se recupera agrupando por
+  (PtID, nominal_week_index), y la cobertura clínica de cada bloque está en
+  rct_followup/pedap_weekly_qc.csv con esa misma clave, así que no hace falta
+  un índice aparte. Lo único no recuperable es si la diferencia central de un
+  punto d=2 tocó una lectura HIGH/LOW imputada; va como columna por punto,
+  UsesImputedNeighbour (0,87% de los puntos), de modo que la sensibilidad de
+  excluir esas derivadas es filtrar filas.
+
+  Univariante y bivariante son ficheros SEPARADOS a propósito: no son los
+  mismos puntos quitando una columna. d=1 conserva todas las lecturas del
+  bloque; d=2 conserva solo los centros interiores cuyos vecinos son muestras
+  de 5 minutos realmente adyacentes, así que es un subconjunto estricto
+  colocado en puntos distintos (2.282.921 filas frente a 2.298.470). La
+  derivada va en float64, no en float32, porque es un valor calculado.
+
+  El basal es un bloque único por participante, anterior a la aleatorización:
+  no tiene posición en la línea temporal del seguimiento y NO es la semana 0.
+  Por eso sus ficheros no llevan columnas de semana.
+
+  Contenido: 1169 bloques semanales de los 102 participantes aleatorizados y
+  88 bloques basales (los que alcanzan las 168 horas). Semanas ausentes siguen
+  ausentes; nada se imputa ni se interpola.
+
+  Se reconstruye con scripts/build_pedap_distributions.py, que reutiliza
+  load.load_patient_weeks y Analysis.baseline_projection.baseline_points sin
+  reimplementar ninguna regla, y compara bloque a bloque lo que escribe contra
+  esos arrays antes de guardarlo.
+
+Las tres partes se relacionan por PtID y forman un solo benchmark. Cada una
+incluye manifest.json con sus reglas y huella de procesamiento; las
+etiquetas de versión internas se conservan para identificar los datos.
+weekly_distributions/ se deriva de las otras dos y guarda su huella, de modo
+que si el CGM se reconstruye con otras convenciones queda visiblemente
+desfasado.
+
+La variable de análisis es GlucoseMgDl: HIGH=401 y LOW=39 mg/dL,
+deduplicación por participante y timestamp, sin clipping 40–400 ni
+interpolación de CGM. La cobertura cuenta 5 minutos por lectura.
+Las derivadas basales de d=2 no cruzan la fecha de aleatorización.
+
+Para reconstruir los procesados, los scripts build_pedap_dataset.py y
+build_pedap_baseline_dataset.py aceptan la opción:
+--raw-dir data/processed/pedap_benchmark/raw
+
+Después, build_pedap_distributions.py regenera weekly_distributions/ a partir
+de ellos (--force para sobrescribir).

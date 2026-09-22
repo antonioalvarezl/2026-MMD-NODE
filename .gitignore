@@ -1,0 +1,26 @@
+# Local datasets and shareable archives
+/data/raw/
+/data/processed/
+/exports/
+*.zip
+
+# Generated fits, figures and exports
+/Results_paper/
+/figures_paper/
+/figures_archive/
+/Analysis/dataset_followup_by_patient.csv
+
+# Python and local editor files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
+
+/legacy/
+
+# Exploratory temporal-model comparisons: diagnostic helper, kept locally
+/Run/temporal_model_comparisons.py
