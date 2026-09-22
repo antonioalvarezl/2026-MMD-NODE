@@ -170,3 +170,10 @@ Historical illustrative NODE sensitivity figures remain in
 `figures_paper/sensitivity/`, with their provenance; they are separate from
 the primary clinical export. Historical artifacts in `legacy/` are inactive
 and excluded from version control. Run checks with `python -m pytest`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+The PEDAP data are not covered by it: they come from the Jaeb Center for
+Health Research and are distributed separately under their own terms.
