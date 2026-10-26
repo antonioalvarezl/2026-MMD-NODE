@@ -7,19 +7,21 @@ analyses and synthetic experiments.
 
 <p align="center">
   <table>
-    <tr>
-      <td align="center">
-        <img src="assets/distribution_evolution.gif" width="420" alt="Synthetic example: Gaussian components and mixture-weight trajectories">
-        <br>
-        <em>Synthetic example: Gaussian component contributions (top) and their time-varying mixture weights (bottom).</em>
-      </td>
-      <td align="center">
-        <img src="assets/patient_26.gif" width="420" alt="Real-data example: Patient 26 with background glucose-density histogram and fitted mixture evolution">
-        <br>
-        <em>Real-data example (Patient 26): glucose-density histogram in the background and evolution of the fitted mixture from our model.</em>
-      </td>
-    </tr>
-  </table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="assets/distribution_evolution.gif">
+        <img src="assets/distribution_evolution.gif" width="100%">
+      </a>
+      <p><em>Synthetic example: Gaussian components and mixture-weight trajectories.</em></p>
+    </td>
+    <td align="center" width="50%">
+      <a href="assets/patient_26.gif">
+        <img src="assets/patient_26.gif" width="100%">
+      </a>
+      <p><em>Real-data example (Patient 26): observed glucose distribution and fitted mixture evolution.</em></p>
+    </td>
+  </tr>
+</table>
 </p>
 
 ## How the model works
