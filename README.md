@@ -6,7 +6,7 @@ the time-varying mixture weights. Includes PEDAP glucose-monitoring data
 analyses and synthetic experiments.
 
 <p align="center">
-  <img src="assets/distribution_evolution.gif" width="560" alt="Animated Gaussian components and mixture-weight trajectories in a synthetic example">
+  <img src="assets/distribution_evolution.gif" width="32%" alt="Animated Gaussian components and mixture-weight trajectories in a synthetic example">
 </p>
 
 *A synthetic example: Gaussian component contributions (top) and their
