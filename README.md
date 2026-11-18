@@ -31,7 +31,7 @@ than fitting an unrelated density at each time, the model uses a shared
 dictionary of Gaussian components:
 
 $$
-f_t(x)=\sum_{k=1}^{K}\alpha_k(t)\,\mathcal{N}(x\mid m_k,\Sigma_k).
+f_t(x)=\sum_{k=1}^{K}\alpha_k(t)\mathcal{N}(x\mid m_k,\Sigma_k).
 $$
 
 The component means and covariances stay fixed over time; the mixture
