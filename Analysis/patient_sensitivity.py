@@ -9,6 +9,7 @@ from scipy.stats import multivariate_normal, norm
 
 from Analysis.paper_config import COMPONENT_COLORS
 from Analysis.paper_figures import _save_figure
+from Analysis.paper_style import clinical_density_cmap, DENSITY_POINT_SIZE, DENSITY_POINT_ALPHA
 
 
 def node_feature_sweep(bundle, output_dir, fourier_orders=(0, 1, 2),
@@ -182,8 +183,8 @@ def bandwidth_endpoint_sweep(bundle, raw_blocks, raw_metadata, output_dir,
         for ci, c in enumerate(cs):
             for e, title in enumerate(('Initial', 'Final')):
                 ax = axes[ci, e]
-                mesh = ax.pcolormesh(xx, yy, densities[ci, e], shading='auto', cmap='Greens', vmin=0, vmax=vmax)
-                ax.scatter(*originals[e].T, s=1, color='black', alpha=0.1, rasterized=True)
+                mesh = ax.pcolormesh(xx, yy, densities[ci, e], shading='auto', cmap=clinical_density_cmap(config['treatment_group']), vmin=0, vmax=vmax)
+                ax.scatter(*originals[e].T, s=DENSITY_POINT_SIZE, color='black', alpha=DENSITY_POINT_ALPHA, rasterized=True)
                 ax.set_title(f'{title}, c={c:g}', fontsize=10)
                 if e == 0:
                     ax.set_ylabel('Rate (mg/dL/time)')

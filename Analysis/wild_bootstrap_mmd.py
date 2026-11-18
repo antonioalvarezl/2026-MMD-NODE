@@ -27,6 +27,11 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
+from Analysis import paper_style
+from Analysis.paper_style import WIDE, figsize
+
+paper_style.apply()
 import numpy as np
 from scipy.spatial.distance import pdist
 
@@ -589,7 +594,7 @@ def _save_weekly_pvalue_figure(
     n_components = pvalues.shape[1]
     fig, axes = plt.subplots(
         1, n_components,
-        figsize=(2.4 * n_components, 2.6),
+        figsize=(WIDE, WIDE * 0.26 + 0.55),
         sharex=True, sharey=True,
         squeeze=False,
         layout="constrained",
@@ -603,7 +608,7 @@ def _save_weekly_pvalue_figure(
         )
         ax.axhline(0.05, color="black", linestyle="--", linewidth=1.0)
         ax.set_yscale("log")
-        ax.set_title(f"Component {k + 1}", fontsize=10)
+        ax.set_title(f"Component {k + 1}")
         ax.grid(alpha=0.15, linestyle="--", linewidth=0.6)
 
     # Both p-values are >= 1/(B+1); keep the smallest attainable one inside the axes.
@@ -616,7 +621,7 @@ def _save_weekly_pvalue_figure(
     # and makes the untested span visible rather than hidden.
     axes[0, 0].set_xlim(0.0, float(N_NOMINAL_WEEKS))
     axes[0, 0].set_ylabel(ylabel)
-    fig.supxlabel("Study week", fontsize=10)
+    fig.supxlabel("Study week")
     return _save_figure(fig, output_dir, stem)
 
 

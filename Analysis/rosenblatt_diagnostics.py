@@ -20,6 +20,11 @@ if str(PROJECT_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT_BOOTSTRAP))
 
 import matplotlib.pyplot as plt
+
+from Analysis import paper_style
+from Analysis.paper_style import WIDE, figsize
+
+paper_style.apply()
 import numpy as np
 from scipy.special import logsumexp, ndtr
 from scipy.stats import rankdata
@@ -229,7 +234,7 @@ def _select_display_indices(n_times: int, requested: int) -> np.ndarray:
 def _save_3d_qq(
     curves: list[dict], patient_id: int, coordinate: str, output_stem: Path
 ) -> None:
-    fig = plt.figure(figsize=(9.4, 7.4))
+    fig = plt.figure(figsize=figsize(WIDE, 0.78))
     axis = fig.add_subplot(111, projection="3d")
     colors = plt.cm.viridis(np.linspace(0.05, 0.95, len(curves)))
     key = coordinate.lower()
@@ -256,18 +261,17 @@ def _save_3d_qq(
     axis.plot([], [], [], color="black", linewidth=2.0, label="Discrete MMD weights")
     axis.plot([], [], [], color="black", linewidth=1.3, linestyle=":", label="NODE at same time")
     axis.plot([], [], [], color="black", linewidth=0.7, linestyle="--", label="Uniform reference")
-    axis.legend(loc="upper left", frameon=False, fontsize=8)
+    axis.legend(loc="upper left")
     fig.tight_layout()
     output_stem.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_stem.with_suffix(".pdf"), bbox_inches="tight")
-    fig.savefig(output_stem.with_suffix(".png"), dpi=300, bbox_inches="tight")
+    fig.savefig(output_stem.with_suffix(".pdf"))
     plt.close(fig)
 
 
 def _save_patient_summary(rows: list[dict], patient_id: int, output: Path) -> None:
     patient_rows = [row for row in rows if row["patient_id"] == patient_id]
     times = sorted({row["elapsed_weeks"] for row in patient_rows})
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.3), sharex=True)
+    fig, axes = plt.subplots(1, 2, figsize=figsize(WIDE, 0.42), sharex=True)
     for axis, coordinate in zip(axes, ("u1", "u2")):
         for mode, linestyle in (("discrete_mmd", "-"), ("node_at_observed_time", ":")):
             values = [
@@ -286,11 +290,10 @@ def _save_patient_summary(rows: list[dict], patient_id: int, output: Path) -> No
             title=coordinate.upper(),
         )
         axis.grid(alpha=0.2)
-    axes[0].legend(frameon=False, fontsize=8)
-    fig.suptitle(f"Patient {patient_id}: descriptive Rosenblatt discrepancies")
+    axes[0].legend()
     fig.tight_layout()
     output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output, dpi=180, bbox_inches="tight")
+    fig.savefig(output)
     plt.close(fig)
 
 
@@ -408,7 +411,7 @@ def run_diagnostics(args: argparse.Namespace) -> dict:
             "node_result": str(node_path.resolve()),
         })
         _save_patient_summary(
-            rows, patient_id, output / "participants" / f"patient_{patient_id}_summary.png"
+            rows, patient_id, output / "participants" / f"patient_{patient_id}_summary.pdf"
         )
         print(f"[Rosenblatt] patient {patient_id}: {len(blocks)} blocks", flush=True)
 

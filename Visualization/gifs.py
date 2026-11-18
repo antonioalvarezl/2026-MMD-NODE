@@ -193,7 +193,9 @@ def gif(history_weights,
             evol_weights='path',      # 'path' | 'barplot'
             bg_mode='histogram',      # 'histogram' | 'gaussian'
             folder="Results",
-            filename="gmm_evolution.gif"):
+            filename="gmm_evolution.gif",
+            x_label="x",
+            title_prefix=None):
     """
     Animated visualisation of a time-evolving GMM.
 
@@ -226,6 +228,14 @@ def gif(history_weights,
         Folder to save the GIF
     filename : str, optional
         Filename for the GIF
+    x_label : str, optional
+        First-coordinate label, including units when applicable.
+    title_prefix : str, optional
+        Patient and group label displayed before the evolving week.
+
+    Histograms and the total model density have unit area. Each coloured
+    component is weighted by its mixture weight, so its area is that weight.
+    Histogram bins and both panel limits stay fixed throughout the animation.
     """
     # -----------------------------------------------------------------
     # 0)  Early exit & basic constants
@@ -286,7 +296,15 @@ def gif(history_weights,
         x_min = all_X[:, 0].min()
         x_max = all_X[:, 0].max()
         margin = 0.1 * (x_max - x_min)
+        if margin == 0:
+            margin = 0.1 * max(abs(x_min), 1.0)
         top_xlim = (x_min - margin, x_max + margin)
+        histogram_edges = np.histogram_bin_edges(all_X[:, 0], bins=50)
+        histogram_densities = [
+            np.histogram(np.asarray(block)[:, 0], bins=histogram_edges,
+                         density=True)[0]
+            for block in history_X
+        ]
 
     elif bg_mode == 'gaussian' and means_gt is not None:
         # FIX: Handle the structure [[m1]*d, [m2]*d, [m3]*d]
@@ -305,7 +323,7 @@ def gif(history_weights,
         raise ValueError("Inconsistent background setup.")
 
     # -----------------------------------------------------------------
-    # 2)  y-axis limits - Evaluate every mixture on the same fine grid
+    # 2)  Fixed density scale including both model and observed background
     # -----------------------------------------------------------------
     x_grid = np.linspace(top_xlim[0], top_xlim[1], 400)
     global_max = 0.0
@@ -329,6 +347,15 @@ def gif(history_weights,
                 
             pdf_f += history_weights[f][k] * norm.pdf(x_grid, loc=μ, scale=np.sqrt(σ2))
         global_max = max(global_max, pdf_f.max())
+
+    if bg_mode == 'histogram':
+        global_max = max(global_max, max(h.max() for h in histogram_densities))
+    else:
+        for gt_means, gt_variance in zip(means_gt, vars_gt):
+            locations = np.asarray(gt_means).reshape(len(gt_means), -1)[:, 0]
+            gt_pdf = norm.pdf(x_grid[:, None], locations,
+                              np.sqrt(gt_variance)).mean(axis=1)
+            global_max = max(global_max, gt_pdf.max())
 
     top_ylim = (0.0, global_max * 1.10)   # 10% head-room
 
@@ -357,16 +384,24 @@ def gif(history_weights,
         axT.clear(); axB.clear()
         axT.set_xlim(top_xlim); axT.set_ylim(top_ylim)
         axB.set_xlim(bottom_xlim); axB.set_ylim(bottom_ylim)
+        axT.set_xlabel(x_label)
+        axT.set_ylabel("Density")
+        axB.set_ylabel("Mixture weight")
+        axB.set_xlabel(
+            "Component" if evol_weights == 'barplot' else
+            "Time (weeks)" if history_X_times_array is not None else "Time"
+        )
 
         # ---------- background ----------
         if bg_mode == 'histogram':
             histogram_index = int(histogram_indices[f])
-            Xf = np.asarray(history_X[histogram_index])[:, 0]
-            axT.hist(Xf, bins=50, density=True, color='lightgray', alpha=0.8)
+            axT.stairs(histogram_densities[histogram_index], histogram_edges,
+                       fill=True, color='lightgray', alpha=0.8,
+                       label="Observed density")
             if history_X_times_array is not None:
+                week_title = f"Week {t_grid[f]:.2f}"
                 axT.set_title(
-                    f"Week {t_grid[f]:.2f}; nearest observed block "
-                    f"{history_X_times_array[histogram_index]:.2f}"
+                    f"{title_prefix} | {week_title}" if title_prefix else week_title
                 )
         else:   # gaussian GT
             # FIX: Calculate GT as proper GMM, not average
@@ -388,9 +423,11 @@ def gif(history_weights,
                 pdf += weight_gt * norm.pdf(x_grid, μ_gt, np.sqrt(vars_gt[frame_idx]))
             
             axT.fill_between(x_grid, 0, pdf, color='lightgray', alpha=0.4)
-            axT.plot(x_grid, pdf, color='k', lw=2)
+            axT.plot(x_grid, pdf, color='0.4', lw=1.8, linestyle='--',
+                     label="True density")
 
         # ---------- draw mixture components ----------
+        model_pdf = np.zeros_like(x_grid)
         for k in range(K):
             # Extract mean
             if hasattr(history_means[f][k], '__len__'):
@@ -408,9 +445,15 @@ def gif(history_weights,
                 σ2 = history_covariances[f][k]
             
             pdf_k = history_weights[f][k] * norm.pdf(x_grid, μ, np.sqrt(σ2))
-            axT.fill_between(x_grid, 0, pdf_k, color=cmap(k), alpha=0.3)
-            axT.plot(x_grid, pdf_k, color=cmap(k), lw=1)
+            model_pdf += pdf_k
+            axT.fill_between(x_grid, 0, pdf_k, color=cmap(k), alpha=0.15)
+            axT.plot(x_grid, pdf_k, color=cmap(k), lw=1,
+                     label="Weighted components" if k == 0 else None)
             axT.scatter([μ], [0], s=70*history_weights[f][k], color=cmap(k), marker='s')
+
+        axT.plot(x_grid, model_pdf, color='black', lw=2.8, zorder=5,
+                 label="Model density (sum)")
+        axT.legend(loc='upper right', fontsize=9)
 
         # ---------- bottom panel ----------
         if evol_weights == 'barplot':
@@ -423,10 +466,9 @@ def gif(history_weights,
 
         plt.tight_layout()
         fig.canvas.draw()
-        w, h = fig.canvas.get_width_height()
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h, w, 3)
+        img = np.asarray(fig.canvas.buffer_rgba())[:, :, :3].copy()
         frames.append(img)
 
     plt.close(fig)
-    imageio.mimsave(full_path, frames, fps=fps)
+    imageio.mimsave(full_path, frames, duration=1000 / fps, loop=0)
     print(f"[INFO] GMM GIF saved → {full_path}")

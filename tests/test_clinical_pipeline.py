@@ -94,7 +94,7 @@ def test_endpoint_summary_uses_same_complete_cases():
     assert result.query("arm == 'CLC' and quantity == 'followup_13wk'")['mean'].iloc[0] == 150
 
 
-@pytest.mark.parametrize('mode,run', [('cgm_univariate','run14'),('cgm_bivariate','run15')])
+@pytest.mark.parametrize('mode,run', [('cgm_univariate','run16'),('cgm_bivariate','run17')])
 def test_current_configuration_reuses_fits(mode, run, monkeypatch):
     import input as config
     from argparse import Namespace

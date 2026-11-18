@@ -6,23 +6,23 @@ the time-varying mixture weights. Includes PEDAP glucose-monitoring data
 analyses and synthetic experiments.
 
 <p align="center">
-  <table>
-  <tr>
-    <td align="center" width="50%">
-      <a href="assets/distribution_evolution.gif">
-        <img src="assets/distribution_evolution.gif" width="100%">
-      </a>
-      <p><em>Synthetic example: Gaussian components and mixture-weight trajectories.</em></p>
-    </td>
-    <td align="center" width="50%">
-      <a href="assets/patient_26.gif">
-        <img src="assets/patient_26.gif" width="100%">
-      </a>
-      <p><em>Real-data example (Patient 26): observed glucose distribution and fitted mixture evolution.</em></p>
-    </td>
-  </tr>
-</table>
+  <img src="assets/distribution_evolution.gif" width="560" alt="Animated Gaussian components and mixture-weight trajectories in a synthetic example">
 </p>
+
+*A synthetic example: Gaussian component contributions (top) and their
+time-varying mixture weights (bottom).*
+
+<p align="center">
+  <img src="assets/patient_16.gif" width="32%" alt="Participant 16 (Treatment): weekly CGM histograms, fitted glucose densities and mixture-weight trajectories">
+  <img src="assets/patient_26.gif" width="32%" alt="Participant 26 (Treatment): weekly CGM histograms, fitted glucose densities and mixture-weight trajectories">
+  <img src="assets/patient_39.gif" width="32%" alt="Participant 39 (Control): weekly CGM histograms, fitted glucose densities and mixture-weight trajectories">
+</p>
+
+*Clinical examples: participants 16 and 26 (Treatment) and 39 (Control),
+from left to right. Each animation shows observed weekly CGM histograms,
+fitted glucose densities and their Gaussian component contributions (top),
+and mixture-weight trajectories during follow-up (bottom).*
+
 
 ## How the model works
 
@@ -72,7 +72,7 @@ Parquet engine, such as `pyarrow`.
 
 `PEDAP_benchmark.zip` contains the three original source files used in the
 analysis and every processed part, including the aggregated distributions the
-model is fitted on. It is distributed separately from the code. See [PEDAP_descripcion_datos.txt](PEDAP_descripcion_datos.txt)
+model is fitted on. It is distributed separately from the code. See [dataset description](docs/dataset_description.txt)
 for their contents and processing rules.
 
 Extract the single benchmark folder into `data/processed/`:
@@ -142,6 +142,7 @@ reused; fitting can be computationally expensive.
   72-hour rule, the dataset fingerprint), with no dependency on the modelling
   code. `scripts/build_pedap_*.py`: the dataset builders that apply them.
 - `load.py`: processed-data loading and weekly observations.
+- `docs/`: dataset description and local experiment reference.
 - `Analysis/`: clinical summaries, inference and figures;
   `Medical_DataAnalysis.ipynb` provides the analysis notebook.
 
@@ -152,8 +153,8 @@ functions used by the experiments and plots; they are part of the code.
 
 Fitted parameters and trajectories are saved under `Results_paper/`.
 The analysis notebook writes its figures to `figures_paper/`, organized by
-representation and experiment. PDF files for manuscripts
-and PNG previews are kept together, without a separate export copy.
+representation and experiment. Figures are vector PDF only, authored at
+final printed size for AOAS; see `Analysis/paper_style.py`.
 Select your saved experiment in the notebook before running the analyses.
 
 Datasets, fitted results, generated figures and shareable archives
@@ -163,7 +164,10 @@ are included so that the README renders on GitHub.
 The longitudinal dataset uses Dexcom Clarity, from randomization + 4 days
 to the actual Week 13 visit. Usable weeks require 72 hours; missing weeks
 remain missing and observation times stay on the clinical timeline.
-Clinical fits retain K=5, the existing ridge and degree-4 polynomial NODE.
+Clinical fits retain K=5 and the existing ridge; the NODE time basis is
+linear time plus two Fourier harmonics (`time_polynomial_degree=1`,
+`time_fourier_order=2`), which roughly halves the d=1 trajectory error
+relative to the earlier degree-4 polynomial.
 
 Descriptive group curves average only participants whose fitted support
 contains each time and save the arm-specific counts. Functional inference
@@ -180,8 +184,17 @@ The notebook writes paper figures to `figures_paper/<dimension>/<run>/`.
 Run `python -m Analysis.export_figures` to package the active d1/d2 figures.
 Historical illustrative NODE sensitivity figures remain in
 `figures_paper/sensitivity/`, with their provenance; they are separate from
-the primary clinical export. Historical artifacts in `legacy/` are inactive
-and excluded from version control. Run checks with `python -m pytest`.
+the primary clinical export. Run checks with `python -m pytest`.
+
+## Local output organization
+
+- `Results_paper/CGM/`: four valid configurations: d=1/d=2, each with polynomial-only or Fourier time inputs. All are retained.
+- `Results_paper/Synthetic/`: separate synthetic configurations, also retained.
+- `figures_paper/`: per-run summaries, baseline-to-final figures, and the manuscript sensitivity collection.
+- `exports/PEDAP_benchmark.zip`: the full dataset package.
+- `exports/manuscript/`: the latest main, supplement and figure update, with original drafts and exact diffs.
+
+Raw inputs and processed manifests remain in `data/`. Generated outputs stay local; `.gitignore` excludes them from GitHub. Each saved run retains its full configuration in `fixed_params.json`.
 
 ## License
 

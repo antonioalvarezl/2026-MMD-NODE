@@ -24,3 +24,12 @@ venv/
 
 # Exploratory temporal-model comparisons: diagnostic helper, kept locally
 /Run/temporal_model_comparisons.py
+
+# Local research notes and TeX build files
+/docs/acat_methods.tex
+/docs/experiment_reference.md
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz

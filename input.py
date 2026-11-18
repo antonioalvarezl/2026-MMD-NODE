@@ -168,8 +168,8 @@ def get_params(args=None):
         "n_MC": 10000,
         "normalization": "softmax",
         "trainable_initial": True,
-        "time_fourier_order": 0,
-        "time_polynomial_degree": 4,
+        "time_fourier_order": 2,
+        "time_polynomial_degree": 1,
         "softmax_epsilon": 1e-8
     }
     # Validate input parameters

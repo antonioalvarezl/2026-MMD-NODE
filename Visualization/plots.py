@@ -2002,12 +2002,14 @@ def plot_gmm_vs_empirical_1d(means, covs, weights, empirical_data, title="", sav
         plt.show()
 
 
-def plot_gmm_vs_empirical_2d(means, covs, weights, empirical_data, title="", save_path=None):
+def plot_gmm_vs_empirical_2d(means, covs, weights, empirical_data, title="", save_path=None, arm=None):
     """
     Plot 2D GMM prediction as contour. Generates two plots:
     - One with empirical scatter
     - One without (GMM only)
     """
+    from Analysis.paper_style import clinical_density_cmap, DENSITY_POINT_SIZE, DENSITY_POINT_ALPHA
+    density_cmap = clinical_density_cmap(arm) if arm is not None else "Oranges"
     means = np.asarray(means, dtype=float)
     covs = np.asarray(covs, dtype=float)
     weights = np.asarray(weights, dtype=float).reshape(-1)
@@ -2056,9 +2058,9 @@ def plot_gmm_vs_empirical_2d(means, covs, weights, empirical_data, title="", sav
     
     # Plot WITH empirical data
     fig, ax = plt.subplots(figsize=(11, 8), dpi=100)
-    im = ax.contourf(X, Y, Z, levels=15, cmap='Oranges', alpha=0.85)
+    im = ax.contourf(X, Y, Z, levels=15, cmap=density_cmap, alpha=0.85)
     plt.colorbar(im, ax=ax, label='Density')
-    ax.scatter(empirical_data[:, 0], empirical_data[:, 1], s=4, alpha=0.35, 
+    ax.scatter(empirical_data[:, 0], empirical_data[:, 1], s=DENSITY_POINT_SIZE, alpha=DENSITY_POINT_ALPHA, 
                color='black', label='Empirical data', rasterized=True)
     ax.set_xlabel('Glucose (mg/dL)', fontsize=12)
     ax.set_ylabel('Glucose Derivative (mg/dL/min)', fontsize=12)
@@ -2073,7 +2075,7 @@ def plot_gmm_vs_empirical_2d(means, covs, weights, empirical_data, title="", sav
         
         # Plot WITHOUT empirical data (GMM only)
         fig2, ax2 = plt.subplots(figsize=(11, 8), dpi=100)
-        im2 = ax2.contourf(X, Y, Z, levels=15, cmap='Oranges', alpha=0.85)
+        im2 = ax2.contourf(X, Y, Z, levels=15, cmap=density_cmap, alpha=0.85)
         plt.colorbar(im2, ax=ax2, label='Density')
         ax2.set_xlabel('Glucose (mg/dL)', fontsize=12)
         ax2.set_ylabel('Glucose Derivative (mg/dL/min)', fontsize=12)

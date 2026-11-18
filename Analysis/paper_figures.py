@@ -25,6 +25,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import gaussian_kde, multivariate_normal, norm
 
+from Analysis import paper_style
+from Analysis.paper_style import NARROW, WIDE, figsize
+
+# Every figure below is authored at final printed size; see Analysis/paper_style.
+paper_style.apply()
+
 from Analysis.paper_config import (
     ARM_COLORS,
     ARM_NAMES,
@@ -403,14 +409,11 @@ def _load_interval_data(
 
 
 def _save_figure(fig, output_folder, stem):
-    """Save vector PDF plus high-resolution PNG with minimal padding."""
-    files = []
-    for extension, dpi in (("pdf", None), ("png", 400)):
-        path = os.path.join(output_folder, f"{stem}.{extension}")
-        fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.03)
-        files.append(path)
+    """Save the figure as vector PDF only (AOAS takes no raster plots)."""
+    path = os.path.join(output_folder, f"{stem}.pdf")
+    fig.savefig(path)
     plt.close(fig)
-    return files
+    return [path]
 
 
 def _display_time(common_grid):
@@ -422,16 +425,17 @@ def _display_time(common_grid):
 
 
 def _paper_axis(axis, *, xlabel=None, ylabel=None, xlim=None, ylim=None):
+    # Sizes come from the AOAS rcParams, so they are already correct at the
+    # printed size and must not be overridden per call.
     if xlabel is not None:
-        axis.set_xlabel(xlabel, fontsize=15)
+        axis.set_xlabel(xlabel)
     if ylabel is not None:
-        axis.set_ylabel(ylabel, fontsize=15)
+        axis.set_ylabel(ylabel)
     if xlim is not None:
         axis.set_xlim(*xlim)
     if ylim is not None:
         axis.set_ylim(*ylim)
-    axis.tick_params(axis="both", which="major", labelsize=13)
-    axis.grid(alpha=0.16, linestyle="--", linewidth=0.6)
+    axis.grid(True)
 
 
 def _trajectory_display_limits(trajectories):
@@ -464,7 +468,7 @@ def _plot_trajectory_figures(data, output_folder, band_pct=90.0):
         # dashed outer percentile envelope. This matches the old paper
         # much more closely than fill_between.
         # -------------------------------------------------------------
-        fig, axis = plt.subplots(figsize=(10.0, 5.0))
+        fig, axis = plt.subplots(figsize=figsize(WIDE, 0.50))
         for label in (1, 0):
             arm = trajectories[labels == label, :, component]
             color = colors[label]
@@ -872,7 +876,7 @@ def _plot_signed_density_difference_1d(
     )
     norm = TwoSlopeNorm(vmin=-bound, vcenter=0.0, vmax=bound)
 
-    fig, axis = plt.subplots(figsize=(10.0, 5.0))
+    fig, axis = plt.subplots(figsize=figsize(WIDE, 0.50))
 
     axis.fill_between(
         grid, 0.0, difference,
@@ -906,8 +910,7 @@ def _plot_signed_density_difference_1d(
     axis.set_xlim(float(grid[0]), float(grid[-1]))
     axis.set_ylim(-1.08 * bound, 1.08 * bound)
     axis.set_xticks([0, 100, 200, 300, 400])
-    axis.tick_params(axis="both", which="major", labelsize=13)
-    axis.grid(alpha=0.16, linestyle="--", linewidth=0.6)
+    axis.grid(True)
     axis.set_xlabel("")
     axis.set_ylabel("")
     axis.set_title("")
@@ -1059,7 +1062,7 @@ def _plot_density_figure(
         density_ymax = 1.06 * global_density_max
 
         for when in ("initial", "final"):
-            fig, axis = plt.subplots(figsize=(10.0, 5.0))
+            fig, axis = plt.subplots(figsize=figsize(WIDE, 0.50))
             axis.plot(
                 grid,
                 densities[(1, when)],
@@ -1075,8 +1078,7 @@ def _plot_density_figure(
             axis.set_xlim(float(grid[0]), float(grid[-1]))
             axis.set_ylim(density_ymin, density_ymax)
             axis.set_xticks([0, 100, 200, 300, 400])
-            axis.tick_params(axis="both", which="major", labelsize=13)
-            axis.grid(alpha=0.16, linestyle="--", linewidth=0.6)
+            axis.grid(True)
             axis.set_xlabel("")
             axis.set_ylabel("")
             axis.set_title("")
@@ -1121,15 +1123,14 @@ def _plot_density_figure(
         )
 
         # Optional compact composite matching the same quantities.
-        fig, axes = plt.subplots(2, 2, figsize=(12.5, 7.6), sharex=True)
+        fig, axes = plt.subplots(2, 2, figsize=figsize(WIDE, 0.78), sharex=True)
 
         for col, when in enumerate(("initial", "final")):
             ax = axes[0, col]
             ax.plot(grid, densities[(1, when)], color=arm_colors[1], linewidth=2.0)
             ax.plot(grid, densities[(0, when)], color=arm_colors[0], linewidth=2.0)
-            ax.set_title(when.capitalize(), fontsize=12)
-            ax.grid(alpha=0.16, linestyle="--", linewidth=0.6)
-            ax.tick_params(labelsize=11)
+            ax.set_title(when.capitalize())
+            ax.grid(True)
 
         for col, (label, difference) in enumerate(
             ((0, control_difference), (1, treatment_difference))
@@ -1153,9 +1154,8 @@ def _plot_density_figure(
             ax.plot(grid, difference, color=arm_colors[label], linewidth=1.7)
             ax.axhline(0.0, color="black", linewidth=0.65, alpha=0.7)
             ax.set_ylim(-1.05 * global_diff_bound, 1.05 * global_diff_bound)
-            ax.set_title(f"Difference: {arm_names[label]}", fontsize=12)
-            ax.grid(alpha=0.16, linestyle="--", linewidth=0.6)
-            ax.tick_params(labelsize=11)
+            ax.set_title(f"Difference: {arm_names[label]}")
+            ax.grid(True)
 
         for ax in axes[-1]:
             ax.set_xlabel("Glucose concentration (mg/dL)")
@@ -1264,7 +1264,7 @@ def _plot_density_figure(
         arm = arm_names[label].lower()
 
         for when in ("initial", "final"):
-            fig, axis = plt.subplots(figsize=(10.0, 5.0))
+            fig, axis = plt.subplots(figsize=figsize(WIDE, 0.50))
             axis.contourf(
                 xx,
                 yy,
@@ -1296,7 +1296,7 @@ def _plot_density_figure(
             if label == 1
             else _blue_white_red_cmap()
         )
-        fig, axis = plt.subplots(figsize=(10.0, 5.0))
+        fig, axis = plt.subplots(figsize=figsize(WIDE, 0.50))
         contour = axis.contourf(
             xx,
             yy,
@@ -1332,7 +1332,7 @@ def _plot_density_figure(
     # 2x3 manuscript composite: Control row, then Treatment row.
     fig, axes = plt.subplots(
         2, 3,
-        figsize=(14.0, 7.3),
+        figsize=figsize(WIDE, 0.72),
         sharex=True,
         sharey=True,
     )
@@ -1350,7 +1350,6 @@ def _plot_density_figure(
             )
             axes[row, col].set_title(
                 f"{arm_names[label]}: {when.capitalize()}",
-                fontsize=12,
             )
 
         difference = densities[(label, "final")] - densities[(label, "initial")]
@@ -1368,10 +1367,7 @@ def _plot_density_figure(
             extend="both",
             alpha=0.95,
         )
-        axes[row, 2].set_title(
-            f"{arm_names[label]}: Difference",
-            fontsize=12,
-        )
+        axes[row, 2].set_title(f"{arm_names[label]}: Difference")
         colorbar = fig.colorbar(
             contour,
             ax=axes[row, 2],
@@ -1413,7 +1409,7 @@ def _plot_window_sensitivity(data, output_folder):
     reports = inference_window_sensitivity(supports, labels, verbose=False)
     reports["0.90"] = select_inference_window(supports, labels, verbose=False)[-1]
     save_json(reports, output_folder, "window_sensitivity.json")
-    fig, ax = plt.subplots(figsize=(7, 2.7), layout="constrained")
+    fig, ax = plt.subplots(figsize=figsize(WIDE, 0.40), layout="constrained")
     for index, key in enumerate(sorted(reports)):
         report = reports[key]
         if "error" in report:
@@ -1422,7 +1418,7 @@ def _plot_window_sensitivity(data, output_folder):
         ax.plot([low, high], [index, index], marker="|", markersize=12, linewidth=3)
         text = (f"CLC {report['n_retained_clc']}/{report['n_total_clc']}; "
                 f"SC {report['n_retained_sc']}/{report['n_total_sc']}")
-        ax.text((low + high) / 2, index + 0.15, text, ha="center", fontsize=9)
+        ax.text((low + high) / 2, index + 0.15, text, ha="center")
     ax.set(yticks=range(3), yticklabels=["85%", "90% (primary)", "95%"],
            xlabel="Weeks since randomization", ylabel="Minimum coverage per arm",
            xlim=(0, 13), ylim=(-0.4, 2.5))
